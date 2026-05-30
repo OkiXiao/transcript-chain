@@ -1,0 +1,37 @@
+{
+  "rules": {
+    "config": {
+      ".read": true,
+      ".write": true
+    },
+    "emailVerifications": {
+      ".read": false,
+      ".write": true
+    },
+    "allowedSchools": {
+      ".read": true,
+      ".write": true
+    },
+    "allowedHR": {
+      ".read": true,
+      ".write": true
+    },
+    "studentEmails": {
+      "$schoolWallet": {
+        ".read": true,
+        ".write": true
+      }
+    },
+    "nimRegistry": {
+      "$schoolWallet": {
+        ".read": true,
+        ".write": true
+      }
+    },
+    "pendingTranscripts": {
+      ".read": true,
+      ".write": true,
+      ".indexOn": ["studentWallet", "schoolWallet", "status"]
+    }
+  }
+}

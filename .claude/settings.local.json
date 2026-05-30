@@ -1,0 +1,48 @@
+{
+  "permissions": {
+    "allow": [
+      "Read(//c/Users/Asus/.claude/projects/c--Users-Asus--gemini-antigravity-scratch-transcript-chain/memory/**)",
+      "Bash(pkill -f \"vercel dev\")",
+      "Bash(pkill -f \"vite\")",
+      "Bash(cat /tmp/vercel-dev.log | tail -15)",
+      "Read(//tmp/**)",
+      "Bash(curl -s \"http://localhost:3334/api/ministry/requests?ministryWallet=0x829b0515aE678D77a1283faca5A8895664C1E998\")",
+      "Bash(curl -s \"http://localhost:3334/api/ministry/requests?ministryWallet=0x0000000000000000000000000000000000000001\")",
+      "Bash(curl -s -X POST http://localhost:3334/api/student/approve-transcript -H 'Content-Type: application/json' -d '{\"requestId\":\"fake\",\"ministryWallet\":\"0x829b0515aE678D77a1283faca5A8895664C1E998\",\"action\":\"ministry_approve\"}')",
+      "WebFetch(domain:vspo.jp)",
+      "Bash(New-Item -ItemType Directory -Force \"C:\\\\Users\\\\Asus\\\\vspo-website\\\\public\\\\characters\")",
+      "Bash(Out-Null)",
+      "Bash(Write-Host \"Done\")",
+      "Bash(Write-Host \"Directory created\")",
+      "Read(//c/Users/Asus/vspo-website/**)",
+      "Bash(npx tsc *)",
+      "Bash(npx --prefix \"C:/Users/Asus/vspo-website\" tsc --noEmit)",
+      "Bash(node \"C:/Users/Asus/vspo-website/node_modules/.bin/tsc\" -p \"C:/Users/Asus/vspo-website/tsconfig.json\" --noEmit)",
+      "PowerShell(node --version)",
+      "PowerShell(npm --version)",
+      "PowerShell($env:Path)",
+      "PowerShell(& \"C:\\\\Program Files\\\\nodejs\\\\node.exe\" \"C:\\\\Users\\\\Asus\\\\vspo-website\\\\node_modules\\\\typescript\\\\bin\\\\tsc\" -p \"C:\\\\Users\\\\Asus\\\\vspo-website\\\\tsconfig.json\" --noEmit 2>&1)",
+      "PowerShell(& \"C:\\\\Program Files\\\\nodejs\\\\npm.cmd\" --prefix \"C:\\\\Users\\\\Asus\\\\vspo-website\" run build 2>&1)",
+      "PowerShell(& \"C:\\\\Users\\\\Asus\\\\AppData\\\\Roaming\\\\npm\\\\vercel.cmd\" --cwd \"C:\\\\Users\\\\Asus\\\\vspo-website\" --yes --prod 2>&1)",
+      "PowerShell(Get-Content \"$env:APPDATA\\\\Vercel\\\\auth.json\" -ErrorAction SilentlyContinue; Get-Content \"$env:USERPROFILE\\\\.vercel\\\\auth.json\" -ErrorAction SilentlyContinue)",
+      "PowerShell(Get-Content \"$env:APPDATA\\\\com.vercel.cli\\\\Data\\\\auth.json\" | ConvertFrom-Json | Select-Object -ExpandProperty token)",
+      "PowerShell(git -C \"C:\\\\Users\\\\Asus\\\\vspo-website\" log --oneline 2>&1)",
+      "PowerShell(& \"C:\\\\Users\\\\Asus\\\\AppData\\\\Roaming\\\\npm\\\\vercel.cmd\" pull --yes --environment preview --cwd \"C:\\\\Users\\\\Asus\\\\vspo-website\" 2>&1)",
+      "PowerShell(& \"C:\\\\Users\\\\Asus\\\\AppData\\\\Roaming\\\\npm\\\\vercel.cmd\" build --yes --cwd \"C:\\\\Users\\\\Asus\\\\vspo-website\" --target production 2>&1)",
+      "PowerShell(& \"C:\\\\Users\\\\Asus\\\\AppData\\\\Roaming\\\\npm\\\\vercel.cmd\" --cwd \"C:\\\\Users\\\\Asus\\\\vspo-website\\\\out\" --yes --prod 2>&1)",
+      "PowerShell(& \"C:\\\\Users\\\\Asus\\\\AppData\\\\Roaming\\\\npm\\\\vercel.cmd\" whoami 2>&1)",
+      "PowerShell(& \"C:\\\\Users\\\\Asus\\\\AppData\\\\Roaming\\\\npm\\\\vercel.cmd\" teams list 2>&1)",
+      "PowerShell(& \"C:\\\\Users\\\\Asus\\\\AppData\\\\Roaming\\\\npm\\\\vercel.cmd\" link --cwd \"C:\\\\Users\\\\Asus\\\\vspo-website\\\\out\" --yes --scope okixiao --project vgss-website 2>&1)",
+      "PowerShell(& \"C:\\\\Program Files\\\\nodejs\\\\npm.cmd\" install -g netlify-cli 2>&1)",
+      "PowerShell(& \"C:\\\\Users\\\\Asus\\\\AppData\\\\Roaming\\\\npm\\\\netlify.cmd\" --version 2>&1)",
+      "PowerShell(& \"C:\\\\Program Files\\\\nodejs\\\\npx.cmd\" surge --version 2>&1)",
+      "PowerShell(Get-Command netlify -ErrorAction SilentlyContinue)",
+      "PowerShell(& \"C:\\\\Program Files\\\\nodejs\\\\node.exe\" \"C:\\\\Users\\\\Asus\\\\AppData\\\\Roaming\\\\npm\\\\node_modules\\\\netlify-cli\\\\bin\\\\netlify.js\" --version 2>&1)"
+    ],
+    "additionalDirectories": [
+      "C:\\Users\\Asus\\vspo-website\\src",
+      "C:\\Users\\Asus\\vspo-website\\public",
+      "C:\\Users\\Asus\\vspo-website"
+    ]
+  }
+}
