@@ -1,5 +1,5 @@
 import { ethers } from 'ethers';
-import { getAllowedSchools, getAllowedHR, addToWhitelist, removeFromWhitelist, getConfig, setConfig } from './lib/firebaseAdmin.js';
+import { getAllowedSchools, getAllowedHR, addToWhitelist, removeFromWhitelist, getConfig, setConfig } from './_lib/firebaseAdmin.js';
 
 const ADMIN_WALLET = process.env.ADMIN_WALLET?.toLowerCase() || '';
 

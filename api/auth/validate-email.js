@@ -3,7 +3,7 @@ import { randomUUID } from 'crypto';
 import nodemailer from 'nodemailer';
 import { validateSchoolEmail, validateHREmail, validateStudentEmailFormat } from '../../server/emailValidator.js';
 import { signSchoolRegistration, signStudentRegistration, signHRRegistration, fetchNonceFromChain } from '../../server/signerService.js';
-import { isStudentRegistered, isEmailRegistered, markEmailRegistered, isSchoolAllowed, isHRAllowed, setEmailVerification, getEmailVerification, deleteEmailVerification } from '../lib/firebaseAdmin.js';
+import { isStudentRegistered, isEmailRegistered, markEmailRegistered, isSchoolAllowed, isHRAllowed, setEmailVerification, getEmailVerification, deleteEmailVerification } from '../_lib/firebaseAdmin.js';
 
 const APP_URL      = process.env.APP_URL || 'https://transcript-chain-six.vercel.app';
 const GMAIL_USER   = process.env.GMAIL_USER || '';
