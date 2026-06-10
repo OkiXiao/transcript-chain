@@ -1,5 +1,5 @@
 import { ethers } from 'ethers';
-import { getNimRecord } from '../lib/firebaseAdmin.js';
+import { getNimRecord } from '../_lib/firebaseAdmin.js';
 
 export default async function handler(req, res) {
     res.setHeader('Access-Control-Allow-Origin', '*');

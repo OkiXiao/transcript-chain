@@ -1,5 +1,5 @@
 import { ethers } from 'ethers';
-import { getPendingTranscriptById, updateTranscriptStatus, getConfig } from '../lib/firebaseAdmin.js';
+import { getPendingTranscriptById, updateTranscriptStatus, getConfig } from '../_lib/firebaseAdmin.js';
 
 const MINISTRY_WALLET_ENV = process.env.MINISTRY_WALLET?.toLowerCase() || '';
 

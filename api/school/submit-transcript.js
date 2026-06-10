@@ -1,5 +1,5 @@
 import { ethers } from 'ethers';
-import { createPendingTranscript, resubmitTranscript } from '../lib/firebaseAdmin.js';
+import { createPendingTranscript, resubmitTranscript } from '../_lib/firebaseAdmin.js';
 
 export default async function handler(req, res) {
     res.setHeader('Access-Control-Allow-Origin', '*');

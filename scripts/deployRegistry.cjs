@@ -23,7 +23,19 @@ async function main() {
 
     const UserRegistry = await hre.ethers.getContractFactory('UserRegistry');
     console.log('Deploying UserRegistry...');
-    const registry = await UserRegistry.deploy(signerWallet.address);
+    const feeData = await hre.ethers.provider.getFeeData();
+    const baseFee = feeData.lastBaseFeePerGas || hre.ethers.parseUnits('15', 'gwei');
+    const maxFeePerGas = baseFee + hre.ethers.parseUnits('3', 'gwei');  // baseFee + 3 Gwei tip
+    const maxPriorityFeePerGas = hre.ethers.parseUnits('2', 'gwei');
+    console.log('baseFee:', hre.ethers.formatUnits(baseFee, 'gwei'), 'gwei');
+    console.log('maxFeePerGas:', hre.ethers.formatUnits(maxFeePerGas, 'gwei'), 'gwei');
+    console.log('balance:', hre.ethers.formatEther(await hre.ethers.provider.getBalance(deployer.address)), 'ETH');
+
+    const registry = await UserRegistry.deploy(signerWallet.address, {
+        maxFeePerGas,
+        maxPriorityFeePerGas,
+        gasLimit: 1_500_000,
+    });
     await registry.waitForDeployment();
 
     const address = await registry.getAddress();

@@ -19,7 +19,7 @@ module.exports = {
     networks: {
         hardhat: {},
         sepolia: {
-            url: process.env.SEPOLIA_RPC_URL || "https://rpc.sepolia.org",
+            url: process.env.RPC_URL || process.env.SEPOLIA_RPC_URL || "https://ethereum-sepolia-rpc.publicnode.com",
             accounts: process.env.DEPLOYER_PRIVATE_KEY ? [process.env.DEPLOYER_PRIVATE_KEY] : []
         }
     }

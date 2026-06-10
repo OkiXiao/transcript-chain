@@ -4,7 +4,7 @@
  */
 import PDFDocument from 'pdfkit';
 import QRCode from 'qrcode';
-import { uploadBufferToPinata, uploadJSONToPinata } from '../lib/pinata.js';
+import { uploadBufferToPinata, uploadJSONToPinata } from '../_lib/pinata.js';
 
 const VALID_GRADES = ['A', 'A-', 'B+', 'B', 'B-', 'C+', 'C', 'D', 'E'];
 

@@ -6,7 +6,7 @@
 //   GET http://localhost:3001/api/auth/signer-address
 
 const registryInfo = {
-    address: '0x2189a013D0cF3b4f2B198e0221764E2e33113F22',
+    address: '0x0A14c87521412542F614149b8a27BcD49DcA3137',
     network: 'sepolia',
     chainId: 11155111,
     abi: [

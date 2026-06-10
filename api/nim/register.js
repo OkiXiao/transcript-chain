@@ -3,7 +3,7 @@
  * POST /api/nim/register
  */
 import { ethers } from 'ethers';
-import { addNimRecord, addStudentEmail } from '../lib/firebaseAdmin.js';
+import { addNimRecord, addStudentEmail } from '../_lib/firebaseAdmin.js';
 
 export default async function handler(req, res) {
     res.setHeader('Access-Control-Allow-Origin', '*');

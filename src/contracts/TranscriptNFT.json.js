@@ -1,7 +1,7 @@
-// Deployed to Sepolia on 2026-05-29 (v6 - Ministry-Triggered Mint)
-// Contract: 0x0b0E53551B7837E02013Bf54f45c0924bea03168
+// Deployed to Sepolia on 2026-06-10 (v6 - Redeploy)
+// Contract: 0x6843948A9DA1E33f59d4Bc9AC7DD39C5f38031d3
 const contractInfo = {
-    address: "0x0b0E53551B7837E02013Bf54f45c0924bea03168",
+    address: "0x6843948A9DA1E33f59d4Bc9AC7DD39C5f38031d3",
     network: "sepolia",
     chainId: 11155111,
     abi: [

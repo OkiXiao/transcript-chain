@@ -1,5 +1,5 @@
 import { ethers } from 'ethers';
-import { getAllStudentApprovedTranscripts, getConfig } from '../lib/firebaseAdmin.js';
+import { getAllStudentApprovedTranscripts, getConfig } from '../_lib/firebaseAdmin.js';
 
 const MINISTRY_WALLET_ENV = process.env.MINISTRY_WALLET?.toLowerCase() || '';
 
