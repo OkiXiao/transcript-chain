@@ -1,9 +1,9 @@
-// UserRegistry contract — deployed 2026-07-17 (v7 - 3-role refactor)
-// Address: 0xcD7C661a227E8311fEc6d4f87e728dEAb1fE27Cf
+// UserRegistry contract — deployed 2026-07-17 (v7 - 3-role refactor, redeploy 2)
+// Address: 0x1c7337B9bc2927042A45456DEFA5D0b7459aBa5C
 // Roles: 0=None, 1=School, 2=HR
 
 const registryInfo = {
-    address: '0xcD7C661a227E8311fEc6d4f87e728dEAb1fE27Cf',
+    address: '0x1c7337B9bc2927042A45456DEFA5D0b7459aBa5C',
     network: 'sepolia',
     chainId: 11155111,
     abi: [

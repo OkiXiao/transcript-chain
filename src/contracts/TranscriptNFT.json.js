@@ -1,8 +1,8 @@
-// TranscriptNFT contract — deployed 2026-07-17 (v7 - 3-role refactor)
-// Address: 0x6629084d99faB5A59b8F2d429F0595e0804E5780
+// TranscriptNFT contract — deployed 2026-07-17 (v7 - 3-role refactor, redeploy 2)
+// Address: 0x1564298727d81262039474047215c655E504c791
 
 const contractInfo = {
-    address: '0x6629084d99faB5A59b8F2d429F0595e0804E5780',
+    address: '0x1564298727d81262039474047215c655E504c791',
     network: 'sepolia',
     chainId: 11155111,
     abi: [
