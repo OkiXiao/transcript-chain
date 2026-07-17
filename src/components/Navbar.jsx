@@ -2,15 +2,13 @@ import { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import WalletButton from './WalletButton';
 import { useWeb3 } from '../context/Web3Context';
-import { useAuth, ROLE } from '../context/AuthContext';
+import { useAuth } from '../context/AuthContext';
 
 function Navbar() {
     const location = useLocation();
     const { isCorrectNetwork, account } = useWeb3();
     const { role } = useAuth();
     const [menuOpen, setMenuOpen] = useState(false);
-
-    const ownerApprovalDisabled = role === ROLE.SCHOOL || role === ROLE.HR;
 
     const closeMenu = () => setMenuOpen(false);
 
@@ -47,22 +45,6 @@ function Navbar() {
                     <li>
                         <Link to="/verify" className={location.pathname === '/verify' ? 'active' : ''} onClick={closeMenu}>
                             Verify Transcript
-                        </Link>
-                    </li>
-                    <li>
-                        {ownerApprovalDisabled ? (
-                            <span style={{ opacity: 0.35, cursor: 'not-allowed', pointerEvents: 'none' }} title="Hanya untuk Student">
-                                Transkrip Saya
-                            </span>
-                        ) : (
-                            <Link to="/owner" className={location.pathname === '/owner' ? 'active' : ''} onClick={closeMenu}>
-                                Transkrip Saya
-                            </Link>
-                        )}
-                    </li>
-                    <li>
-                        <Link to="/ministry" className={location.pathname === '/ministry' ? 'active' : ''} onClick={closeMenu}>
-                            Kementerian
                         </Link>
                     </li>
                     <li>

@@ -1,16 +1,15 @@
 import { ethers } from 'ethers';
 import { randomUUID } from 'crypto';
 import nodemailer from 'nodemailer';
-import { validateSchoolEmail, validateHREmail, validateStudentEmailFormat } from '../../server/emailValidator.js';
-import { signSchoolRegistration, signStudentRegistration, signHRRegistration, fetchNonceFromChain } from '../../server/signerService.js';
-import { isStudentRegistered, isEmailRegistered, markEmailRegistered, isSchoolAllowed, isHRAllowed, setEmailVerification, getEmailVerification, deleteEmailVerification } from '../_lib/firebaseAdmin.js';
+import { signSchoolRegistration, signHRRegistration, fetchNonceFromChain } from '../../server/signerService.js';
+import { isEmailRegistered, markEmailRegistered, isSchoolAllowed, isHRAllowed, setEmailVerification, getEmailVerification, deleteEmailVerification, createSession, markSessionVerified, getSession } from '../_lib/firebaseAdmin.js';
 
-const APP_URL      = process.env.APP_URL || 'https://transcript-chain-six.vercel.app';
-const GMAIL_USER   = process.env.GMAIL_USER || '';
-const GMAIL_PASS   = process.env.GMAIL_PASS || '';
+const APP_URL    = process.env.APP_URL || 'https://transcript-chain-six.vercel.app';
+const GMAIL_USER = process.env.GMAIL_USER || '';
+const GMAIL_PASS = process.env.GMAIL_PASS || '';
 
 function getEmailHTML(role, verifyUrl) {
-    const roleLabel = role === 'School' ? 'Institusi Pendidikan' : role === 'HR' ? 'HR / Perusahaan' : 'Mahasiswa';
+    const roleLabel = role === 'School' ? 'Institusi Pendidikan' : 'HR / Perusahaan';
     return `
         <div style="font-family:sans-serif;max-width:480px;margin:0 auto;padding:32px 24px;background:#0f172a;color:#f8fafc;border-radius:12px">
             <h2 style="margin:0 0 8px;font-size:22px">🎓 TranscriptChain</h2>
@@ -41,7 +40,7 @@ async function sendVerificationEmail(to, role, verifyUrl) {
 }
 
 const REGISTRY_ADDRESS = process.env.USER_REGISTRY_ADDRESS || '';
-const RPC_URL = process.env.RPC_URL || 'https://ethereum-sepolia-rpc.publicnode.com';
+const RPC_URL          = process.env.RPC_URL || 'https://ethereum-sepolia-rpc.publicnode.com';
 
 export default async function handler(req, res) {
     res.setHeader('Access-Control-Allow-Origin', '*');
@@ -51,9 +50,9 @@ export default async function handler(req, res) {
     if (req.method === 'OPTIONS') return res.status(200).end();
     if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
 
-    const { action, role, email, walletAddress, schoolWallet, chainId } = req.body;
+    const { action, role, email, walletAddress, chainId, sessionId } = req.body;
 
-    // Verify token from email link
+    // ── verify_token: email link clicked ──────────────────────────────────────
     if (action === 'verify_token') {
         const { token } = req.body;
         if (!token) return res.status(400).json({ success: false, error: 'Token wajib diisi.' });
@@ -65,22 +64,42 @@ export default async function handler(req, res) {
                 return res.status(410).json({ success: false, error: 'Link verifikasi sudah kadaluarsa. Silakan daftar ulang.' });
             }
             await deleteEmailVerification(token);
-            return res.json({
-                success: true,
-                role: data.role,
-                email: data.email,
-                emailHash: data.emailHash,
-                signature: data.signature,
+
+            const verifiedPayload = {
+                role:          data.role,
+                email:         data.email,
+                emailHash:     data.emailHash,
+                signature:     data.signature,
                 signerAddress: data.signerAddress,
-                ...(data.schoolWallet && { schoolWallet: data.schoolWallet }),
-            });
+            };
+
+            if (data.sessionId) {
+                await markSessionVerified(data.sessionId, verifiedPayload).catch(() => {});
+            }
+
+            return res.json({ success: true, ...verifiedPayload });
         } catch (err) {
             console.error('[validate-email/verify_token]', err);
             return res.status(500).json({ success: false, error: 'Gagal memverifikasi token.' });
         }
     }
 
-    // Confirm action: mark email as registered after on-chain tx success
+    // ── check_session: original tab polls for verification result ─────────────
+    if (action === 'check_session') {
+        const { sessionId } = req.body;
+        if (!sessionId) return res.status(400).json({ verified: false });
+        try {
+            const session = await getSession(sessionId);
+            if (!session) return res.json({ verified: false });
+            if (Date.now() > session.expiresAt) return res.json({ verified: false, expired: true });
+            if (!session.verified) return res.json({ verified: false });
+            return res.json({ verified: true, ...session.data });
+        } catch {
+            return res.status(500).json({ verified: false });
+        }
+    }
+
+    // ── confirm: mark email registered after on-chain tx success ─────────────
     if (action === 'confirm') {
         if (!email || !walletAddress || !role) {
             return res.status(400).json({ success: false, error: 'Field wajib: email, walletAddress, role.' });
@@ -97,11 +116,12 @@ export default async function handler(req, res) {
         }
     }
 
+    // ── Main flow: validate email & generate backend signature ────────────────
     if (!role || !email || !walletAddress || !chainId) {
         return res.status(400).json({ success: false, error: 'Field wajib: role, email, walletAddress, chainId.' });
     }
-    if (!['School', 'Student', 'HR'].includes(role)) {
-        return res.status(400).json({ success: false, error: 'Role tidak valid. Pilih: School, Student, atau HR.' });
+    if (!['School', 'HR'].includes(role)) {
+        return res.status(400).json({ success: false, error: 'Role tidak valid. Pilih: School atau HR.' });
     }
     if (!ethers.isAddress(walletAddress)) {
         return res.status(400).json({ success: false, error: 'walletAddress tidak valid.' });
@@ -115,13 +135,48 @@ export default async function handler(req, res) {
             });
         }
 
+        // Double-check on-chain state
+        if (REGISTRY_ADDRESS && ethers.isAddress(REGISTRY_ADDRESS)) {
+            const minABI = [
+                'function isRegistered(address) view returns (bool)',
+                'function getProfile(address) view returns (tuple(uint8 role, bytes32 emailHash, bool isActive, uint256 registeredAt))',
+                'function emailHashToWallet(bytes32) view returns (address)',
+            ];
+            try {
+                const provider = new ethers.JsonRpcProvider(RPC_URL);
+                const registry = new ethers.Contract(REGISTRY_ADDRESS, minABI, provider);
+
+                const alreadyRegistered = await registry.isRegistered(walletAddress);
+                if (alreadyRegistered) {
+                    const profile = await registry.getProfile(walletAddress);
+                    if (!profile.isActive) {
+                        return res.status(403).json({
+                            success: false,
+                            error: 'Wallet ini telah dinonaktifkan oleh administrator. Hubungi admin untuk informasi lebih lanjut.',
+                        });
+                    }
+                    return res.status(409).json({
+                        success: false,
+                        error: 'Wallet ini sudah terdaftar di blockchain.',
+                    });
+                }
+
+                const emailOnChainHash = ethers.keccak256(ethers.toUtf8Bytes(email.toLowerCase().trim()));
+                const boundWallet = await registry.emailHashToWallet(emailOnChainHash);
+                if (boundWallet && boundWallet !== ethers.ZeroAddress) {
+                    return res.status(409).json({
+                        success: false,
+                        error: `Email "${email}" sudah terikat ke wallet lain di blockchain.`,
+                    });
+                }
+            } catch { /* RPC error — lanjut */ }
+        }
+
         let nonce = 0n;
         if (REGISTRY_ADDRESS && ethers.isAddress(REGISTRY_ADDRESS)) {
             try {
                 nonce = await fetchNonceFromChain(REGISTRY_ADDRESS, walletAddress, RPC_URL);
-            } catch {
-                // fallback to 0 — contract will reject if nonce mismatch
-            }
+            } catch { /* fallback ke 0 */ }
         }
 
         const bigChainId = BigInt(chainId);
@@ -144,53 +199,40 @@ export default async function handler(req, res) {
                 });
             }
             result = await signHRRegistration(walletAddress, email, nonce, bigChainId);
-
-        } else if (role === 'Student') {
-            if (!schoolWallet || !ethers.isAddress(schoolWallet)) {
-                return res.status(400).json({ success: false, error: 'schoolWallet wajib diisi dan valid untuk role Student.' });
-            }
-            const v = validateStudentEmailFormat(email);
-            if (!v.valid) return res.status(422).json({ success: false, error: v.reason });
-            if (!await isStudentRegistered(schoolWallet, email)) {
-                return res.status(403).json({
-                    success: false,
-                    error: `Email "${email}" tidak ditemukan dalam database mahasiswa sekolah ini. Hubungi administrator sekolah.`,
-                });
-            }
-            result = await signStudentRegistration(walletAddress, email, schoolWallet, nonce, bigChainId);
         }
 
-        // If no Gmail configured, skip email and return directly (dev mode)
+        // Dev mode: skip email
         if (!GMAIL_USER || !GMAIL_PASS) {
             return res.json({
                 success: true,
                 role,
-                emailHash: result.emailHash,
-                signature: result.signature,
+                emailHash:     result.emailHash,
+                signature:     result.signature,
                 signerAddress: result.signerAddress,
-                ...(role === 'Student' && { schoolWallet }),
             });
         }
 
-        // Generate verification token, store in Firebase, send email
-        const token = randomUUID().replace(/-/g, '');
-        const expiresAt = Date.now() + 15 * 60 * 1000; // 15 minutes
+        // Generate token, store in Firebase, send email
+        const token     = randomUUID().replace(/-/g, '');
+        const expiresAt = Date.now() + 15 * 60 * 1000;
         await setEmailVerification(token, {
             role, email, walletAddress,
-            emailHash: result.emailHash,
-            signature: result.signature,
+            emailHash:     result.emailHash,
+            signature:     result.signature,
             signerAddress: result.signerAddress,
-            ...(role === 'Student' && { schoolWallet }),
+            ...(sessionId && { sessionId }),
             expiresAt,
             createdAt: Date.now(),
         });
+        if (sessionId) {
+            await createSession(sessionId, { expiresAt: expiresAt + 5 * 60 * 1000 }).catch(() => {});
+        }
 
         const verifyUrl = `${APP_URL}/register?token=${token}`;
         try {
             await sendVerificationEmail(email, role, verifyUrl);
         } catch (emailErr) {
             console.error('[validate-email/send]', emailErr.message);
-            // Clean up token if email failed
             await deleteEmailVerification(token).catch(() => {});
             return res.status(502).json({ success: false, error: `Gagal mengirim email: ${emailErr.message}` });
         }

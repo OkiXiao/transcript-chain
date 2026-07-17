@@ -8,9 +8,8 @@ pragma solidity ^0.8.24;
  * Alur Registrasi (Hybrid Auth — Email + MetaMask):
  *   1. User mengisi form di frontend (email + pilih role)
  *   2. Backend memvalidasi email sesuai aturan role:
- *        School  → domain pendidikan (.ac.id, .edu, .sch.id, dll.)
- *        Student → email harus ada di database sekolah terkait
- *        HR      → domain korporat resmi (bukan webmail publik)
+ *        School → domain pendidikan (.ac.id, .edu, .sch.id, dll.)
+ *        HR     → domain korporat resmi (bukan webmail publik)
  *   3. Backend menandatangani (sign) parameter registrasi dengan private key-nya
  *   4. Frontend meneruskan signature + params ke fungsi register di kontrak ini
  *   5. Kontrak memverifikasi signature menggunakan ecrecover, lalu menyimpan mapping
@@ -20,9 +19,8 @@ pragma solidity ^0.8.24;
  *   keccak256(email) → address   (mencegah satu email didaftarkan ke banyak wallet)
  *
  * Modifiers:
- *   onlySchool  — hanya wallet bertipe School
- *   onlyStudent — hanya wallet bertipe Student
- *   onlyHR      — hanya wallet bertipe HR
+ *   onlySchool — hanya wallet bertipe School
+ *   onlyHR     — hanya wallet bertipe HR
  */
 
 // ============================================================
@@ -102,7 +100,6 @@ contract UserRegistry {
     enum Role {
         None,       // belum terdaftar
         School,     // institusi pendidikan
-        Student,    // mahasiswa/siswa
         HR          // Human Resources / perusahaan
     }
 
@@ -113,7 +110,6 @@ contract UserRegistry {
         bytes32 emailHash;       // keccak256(email) — email tidak disimpan plain-text on-chain
         bool    isActive;
         uint256 registeredAt;
-        address verifiedBySchool; // khusus Student: alamat sekolah yang memverifikasi mereka
     }
 
     // ──────────────────── State Variables ────────────────────
@@ -136,10 +132,10 @@ contract UserRegistry {
     // ──────────────────── Events ────────────────────
 
     event SchoolRegistered(address indexed wallet, bytes32 indexed emailHash, uint256 timestamp);
-    event StudentRegistered(address indexed wallet, bytes32 indexed emailHash, address indexed verifiedBySchool, uint256 timestamp);
     event HRRegistered(address indexed wallet, bytes32 indexed emailHash, uint256 timestamp);
     event UserDeactivated(address indexed wallet, address indexed byAdmin);
     event UserReactivated(address indexed wallet, address indexed byAdmin);
+    event UserPurged(address indexed wallet, address indexed byAdmin);
     event TrustedSignerUpdated(address indexed oldSigner, address indexed newSigner);
 
     // ──────────────────── Custom Errors ────────────────────
@@ -147,7 +143,6 @@ contract UserRegistry {
     error AlreadyRegistered(address wallet);
     error EmailAlreadyBound(bytes32 emailHash);
     error InvalidBackendSignature();
-    error SchoolNotRegistered(address schoolWallet);
     error Unauthorized(string reason);
     error InactiveAccount(address wallet);
 
@@ -155,7 +150,6 @@ contract UserRegistry {
 
     /**
      * @dev Izinkan akses hanya untuk wallet bertipe School yang aktif.
-     *      Digunakan pada fungsi upload ijazah / pengelolaan data akademik.
      */
     modifier onlySchool() {
         if (profiles[msg.sender].role != Role.School) revert Unauthorized("Hanya School");
@@ -164,18 +158,7 @@ contract UserRegistry {
     }
 
     /**
-     * @dev Izinkan akses hanya untuk wallet bertipe Student yang aktif.
-     *      Digunakan pada fungsi approve/revoke akses verifikasi.
-     */
-    modifier onlyStudent() {
-        if (profiles[msg.sender].role != Role.Student) revert Unauthorized("Hanya Student");
-        if (!profiles[msg.sender].isActive) revert InactiveAccount(msg.sender);
-        _;
-    }
-
-    /**
      * @dev Izinkan akses hanya untuk wallet bertipe HR yang aktif.
-     *      Digunakan pada fungsi verifikasi transkrip (dengan izin student).
      */
     modifier onlyHR() {
         if (profiles[msg.sender].role != Role.HR) revert Unauthorized("Hanya HR");
@@ -233,50 +216,9 @@ contract UserRegistry {
         ));
         _requireValidBackendSig(msgHash, backendSig);
 
-        _writeProfile(msg.sender, Role.School, emailHash, address(0));
+        _writeProfile(msg.sender, Role.School, emailHash);
 
         emit SchoolRegistered(msg.sender, emailHash, block.timestamp);
-    }
-
-    /**
-     * @notice Daftarkan wallet sebagai STUDENT (Mahasiswa/Siswa).
-     *
-     * Prasyarat (divalidasi backend sebelum signature diterbitkan):
-     *   - Email harus ada dalam database mahasiswa milik `schoolWallet`
-     *   - `schoolWallet` harus sudah terdaftar sebagai School di kontrak ini
-     *
-     * @param emailHash   keccak256(email mahasiswa)
-     * @param schoolWallet Alamat wallet sekolah yang memiliki database mahasiswa ini
-     * @param backendSig   Signature backend setelah validasi email vs. database sekolah
-     *
-     * Pesan yang ditandatangani backend:
-     *   keccak256("REGISTER_STUDENT" || walletAddress || emailHash || schoolWallet || nonce || chainId)
-     */
-    function registerStudent(
-        bytes32 emailHash,
-        address schoolWallet,
-        bytes calldata backendSig
-    ) external {
-        _requireNotRegistered(msg.sender);
-        _requireEmailFree(emailHash);
-
-        // Sekolah referensi HARUS sudah terdaftar dan aktif
-        if (profiles[schoolWallet].role != Role.School) revert SchoolNotRegistered(schoolWallet);
-        if (!profiles[schoolWallet].isActive) revert InactiveAccount(schoolWallet);
-
-        bytes32 msgHash = keccak256(abi.encodePacked(
-            "REGISTER_STUDENT",
-            msg.sender,
-            emailHash,
-            schoolWallet,
-            nonces[msg.sender],
-            block.chainid
-        ));
-        _requireValidBackendSig(msgHash, backendSig);
-
-        _writeProfile(msg.sender, Role.Student, emailHash, schoolWallet);
-
-        emit StudentRegistered(msg.sender, emailHash, schoolWallet, block.timestamp);
     }
 
     /**
@@ -308,32 +250,21 @@ contract UserRegistry {
         ));
         _requireValidBackendSig(msgHash, backendSig);
 
-        _writeProfile(msg.sender, Role.HR, emailHash, address(0));
+        _writeProfile(msg.sender, Role.HR, emailHash);
 
         emit HRRegistered(msg.sender, emailHash, block.timestamp);
     }
 
     // ============================================================
-    //               ROLE-GATED STUBS (contoh penggunaan modifier)
+    //               ROLE-GATED STUBS
     // ============================================================
 
-    /**
-     * @notice Contoh penggunaan modifier onlySchool.
-     *         Implementasi nyata ada di TranscriptNFT.sol (mintTranscript).
-     *         Kontrak lain dapat memanggil `getRole(msg.sender)` untuk verifikasi role.
-     */
     function schoolAction() external onlySchool view returns (string memory) {
         return "School: akses Upload Ijazah diizinkan";
     }
 
-    /// @notice Contoh penggunaan modifier onlyStudent.
-    function studentAction() external onlyStudent view returns (string memory) {
-        return "Student: akses Verify Transcript & Owner Approval diizinkan";
-    }
-
-    /// @notice Contoh penggunaan modifier onlyHR.
     function hrAction() external onlyHR view returns (string memory) {
-        return "HR: akses Verify Transcript (dengan izin student) diizinkan";
+        return "HR: akses Verify Transcript diizinkan";
     }
 
     // ============================================================
@@ -348,6 +279,16 @@ contract UserRegistry {
     function reactivateUser(address wallet) external onlyAdmin {
         profiles[wallet].isActive = true;
         emit UserReactivated(wallet, msg.sender);
+    }
+
+    /// @notice Hapus profil wallet sepenuhnya sehingga bisa re-register dari awal.
+    function purgeUser(address wallet) external onlyAdmin {
+        bytes32 emailHash = profiles[wallet].emailHash;
+        if (emailHash != bytes32(0)) {
+            delete emailHashToWallet[emailHash];
+        }
+        delete profiles[wallet];
+        emit UserPurged(wallet, msg.sender);
     }
 
     function updateTrustedSigner(address newSigner) external onlyAdmin {
@@ -372,10 +313,6 @@ contract UserRegistry {
         return profiles[wallet].role == Role.School && profiles[wallet].isActive;
     }
 
-    function isStudent(address wallet) external view returns (bool) {
-        return profiles[wallet].role == Role.Student && profiles[wallet].isActive;
-    }
-
     function isHR(address wallet) external view returns (bool) {
         return profiles[wallet].role == Role.HR && profiles[wallet].isActive;
     }
@@ -388,16 +325,8 @@ contract UserRegistry {
         return nonces[wallet];
     }
 
-    /**
-     * @notice Kembalikan hash pesan registrasi yang harus ditandatangani backend.
-     *         Frontend dapat menggunakan ini untuk debugging / verifikasi off-chain.
-     */
     function getSchoolRegistrationHash(address wallet, bytes32 emailHash) external view returns (bytes32) {
         return keccak256(abi.encodePacked("REGISTER_SCHOOL", wallet, emailHash, nonces[wallet], block.chainid));
-    }
-
-    function getStudentRegistrationHash(address wallet, bytes32 emailHash, address schoolWallet) external view returns (bytes32) {
-        return keccak256(abi.encodePacked("REGISTER_STUDENT", wallet, emailHash, schoolWallet, nonces[wallet], block.chainid));
     }
 
     function getHRRegistrationHash(address wallet, bytes32 emailHash) external view returns (bytes32) {
@@ -423,15 +352,13 @@ contract UserRegistry {
     function _writeProfile(
         address wallet,
         Role role,
-        bytes32 emailHash,
-        address schoolWallet
+        bytes32 emailHash
     ) internal {
         profiles[wallet] = UserProfile({
             role: role,
             emailHash: emailHash,
             isActive: true,
-            registeredAt: block.timestamp,
-            verifiedBySchool: schoolWallet
+            registeredAt: block.timestamp
         });
         emailHashToWallet[emailHash] = wallet;
         nonces[wallet]++;

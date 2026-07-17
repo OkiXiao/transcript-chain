@@ -1,24 +1,11 @@
-/**
- * RegisterPage.jsx
- *
- * Halaman registrasi dengan tiga tab role: School / Student / HR.
- *
- * Alur per role (3 langkah eksplisit):
- *   Step 1 → Hubungkan MetaMask (WalletButton)
- *   Step 2 → Isi email + validasi ke backend (backend sign)
- *   Step 3 → Kirim transaksi ke blockchain via MetaMask
- */
-
 import { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useWeb3 } from '../context/Web3Context';
-import { useAuth, ROLE_LABEL, ROLE } from '../context/AuthContext';
+import { useAuth, ROLE_LABEL } from '../context/AuthContext';
 import { useRegistration, REG_STEP } from '../hooks/useRegistration';
 import WalletButton from '../components/WalletButton';
 
-// ─── Konstanta ────────────────────────────────────────────────
-
-const ROLES = ['School', 'Student', 'HR'];
+const ROLES = ['School', 'HR'];
 
 const ROLE_INFO = {
     School: {
@@ -29,14 +16,6 @@ const ROLE_INFO = {
         emailHint: 'Gunakan email institusi: @universitas.ac.id, @sekolah.sch.id, @mit.edu',
         color: '#4f46e5',
     },
-    Student: {
-        icon: '🎓',
-        title: 'Mahasiswa / Siswa',
-        desc: 'Pemilik ijazah yang ingin mengelola dan membagikan transkrip akademik secara terverifikasi.',
-        emailPlaceholder: 'nama@mahasiswa.ac.id',
-        emailHint: 'Gunakan email yang sudah terdaftar di database sekolah Anda.',
-        color: '#0891b2',
-    },
     HR: {
         icon: '💼',
         title: 'HR / Perusahaan',
@@ -46,8 +25,6 @@ const ROLE_INFO = {
         color: '#059669',
     },
 };
-
-// ─── Sub-component: Step Indicator ───────────────────────────
 
 function StepIndicator({ currentStep, roleColor }) {
     const steps = [
@@ -98,8 +75,6 @@ function StepIndicator({ currentStep, roleColor }) {
     );
 }
 
-// ─── Sub-component: Role Tab ──────────────────────────────────
-
 function RoleTab({ role, selected, onClick, disabled }) {
     const info = ROLE_INFO[role];
     return (
@@ -123,8 +98,6 @@ function RoleTab({ role, selected, onClick, disabled }) {
     );
 }
 
-// ─── Sub-component: Status Banner ────────────────────────────
-
 function StatusBanner({ step, status, error, txHash }) {
     if (step === REG_STEP.SUCCESS) {
         return (
@@ -145,12 +118,8 @@ function StatusBanner({ step, status, error, txHash }) {
             </div>
         );
     }
-    if (error) {
-        return <div style={bannerStyle('#fef2f2', '#991b1b')}><strong>Error:</strong> {error}</div>;
-    }
-    if (status) {
-        return <div style={bannerStyle('#eff6ff', '#1e40af')}>{status}</div>;
-    }
+    if (error) return <div style={bannerStyle('#fef2f2', '#991b1b')}><strong>Error:</strong> {error}</div>;
+    if (status) return <div style={bannerStyle('#eff6ff', '#1e40af')}>{status}</div>;
     return null;
 }
 
@@ -160,8 +129,6 @@ function bannerStyle(bg, color) {
         borderRadius: 8, padding: '12px 16px', marginBottom: 16, fontSize: 14,
     };
 }
-
-// ─── Main Component ───────────────────────────────────────────
 
 export default function RegisterPage({ registryContract }) {
     const navigate = useNavigate();
@@ -175,11 +142,11 @@ export default function RegisterPage({ registryContract }) {
 
     const [selectedRole, setSelectedRole] = useState('School');
     const [email, setEmail]               = useState('');
-    const [schoolWallet, setSchoolWallet] = useState('');
     const [submitting, setSubmitting]     = useState(false);
     const [searchParams] = useSearchParams();
 
-    // Auto-verify token from email link
+    const isCallbackTab = !!searchParams.get('token');
+
     useEffect(() => {
         const token = searchParams.get('token');
         if (token && step === REG_STEP.IDLE) {
@@ -189,7 +156,47 @@ export default function RegisterPage({ registryContract }) {
 
     const info = ROLE_INFO[selectedRole];
 
-    // ── Jika sudah terdaftar ──
+    if (isCallbackTab) {
+        return (
+            <div style={pageStyle}>
+                <div style={{ ...cardStyle, maxWidth: 420, textAlign: 'center' }}>
+                    <div style={{ marginBottom: 8, fontSize: 13, fontWeight: 700, color: '#6366f1', letterSpacing: 1 }}>
+                        TRANSCRIPTCHAIN
+                    </div>
+                    {step === REG_STEP.IDLE && (
+                        <>
+                            <div style={{ fontSize: 44, marginBottom: 16 }}>⏳</div>
+                            <h3 style={{ color: '#1e293b', marginBottom: 8 }}>Memverifikasi email...</h3>
+                            <p style={{ color: '#64748b', fontSize: 13 }}>Mohon tunggu sebentar.</p>
+                        </>
+                    )}
+                    {step === REG_STEP.EMAIL_VALID && (
+                        <>
+                            <div style={{ fontSize: 56, marginBottom: 16 }}>✅</div>
+                            <h2 style={{ color: '#166534', marginBottom: 8 }}>Email Terverifikasi!</h2>
+                            <p style={{ color: '#475569', fontSize: 14, marginBottom: 24 }}>
+                                Kembali ke tab sebelumnya — pendaftaran akan otomatis lanjut ke langkah berikutnya.
+                            </p>
+                            <button style={primaryBtn('#4f46e5')} onClick={() => window.close()}>
+                                Tutup Tab Ini
+                            </button>
+                        </>
+                    )}
+                    {(step === REG_STEP.ERROR || (error && step !== REG_STEP.EMAIL_VALID)) && (
+                        <>
+                            <div style={{ fontSize: 48, marginBottom: 16 }}>❌</div>
+                            <h3 style={{ color: '#991b1b', marginBottom: 8 }}>Verifikasi Gagal</h3>
+                            <p style={{ color: '#64748b', fontSize: 13, marginBottom: 20 }}>{error}</p>
+                            <button style={primaryBtn('#4f46e5')} onClick={() => window.close()}>
+                                Tutup Tab Ini
+                            </button>
+                        </>
+                    )}
+                </div>
+            </div>
+        );
+    }
+
     if (isRegistered) {
         return (
             <div style={pageStyle}>
@@ -211,37 +218,27 @@ export default function RegisterPage({ registryContract }) {
         );
     }
 
-    // ── Derived state ──
     const walletConnected = !!account && isCorrectNetwork;
     const emailSent       = step === REG_STEP.EMAIL_SENT;
     const emailStepDone   = step === REG_STEP.EMAIL_VALID;
     const isSuccess       = step === REG_STEP.SUCCESS;
     const isConfirming    = step === REG_STEP.CONFIRMING;
 
-    // ── Handler: ganti role ──
     function handleRoleChange(role) {
         if (emailSent || emailStepDone || isSuccess) return;
         setSelectedRole(role);
         setEmail('');
-        setSchoolWallet('');
         reset();
     }
 
-    // ── Handler: validasi email (Step 2) ──
     async function handleValidateEmail(e) {
         e.preventDefault();
         if (!walletConnected) return;
         setSubmitting(true);
-        await validateEmail({
-            role: selectedRole,
-            email,
-            walletAddress: account,
-            schoolWallet,
-        });
+        await validateEmail({ role: selectedRole, email, walletAddress: account });
         setSubmitting(false);
     }
 
-    // ── Handler: submit ke chain (Step 3) ──
     async function handleSubmitOnChain() {
         setSubmitting(true);
         await submitOnChain();
@@ -252,7 +249,6 @@ export default function RegisterPage({ registryContract }) {
         <div style={pageStyle}>
             <div style={cardStyle}>
 
-                {/* Header */}
                 <div style={{ marginBottom: 24 }}>
                     <h1 style={{ fontSize: 22, fontWeight: 700, color: '#0f172a', margin: 0 }}>
                         Daftar ke TranscriptChain
@@ -262,24 +258,17 @@ export default function RegisterPage({ registryContract }) {
                     </p>
                 </div>
 
-                {/* Step Indicator */}
                 <StepIndicator currentStep={step} roleColor={info.color} />
 
-                {/* ─── STEP 1: Hubungkan MetaMask ─── */}
+                {/* STEP 1: Hubungkan MetaMask */}
                 <div style={{
                     border: `1px solid ${walletConnected ? '#86efac' : '#e2e8f0'}`,
                     borderRadius: 10, padding: 16, marginBottom: 20,
                     background: walletConnected ? '#f0fdf4' : '#f8fafc',
                 }}>
-                    <div style={{
-                        display: 'flex', justifyContent: 'space-between',
-                        alignItems: 'center', flexWrap: 'wrap', gap: 12,
-                    }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 12 }}>
                         <div>
-                            <div style={{
-                                fontWeight: 600, fontSize: 14,
-                                color: walletConnected ? '#166534' : '#374151',
-                            }}>
+                            <div style={{ fontWeight: 600, fontSize: 14, color: walletConnected ? '#166534' : '#374151' }}>
                                 {walletConnected ? '🦊 Wallet Terhubung' : 'Langkah 1 — Hubungkan MetaMask'}
                             </div>
                             {walletConnected ? (
@@ -292,7 +281,6 @@ export default function RegisterPage({ registryContract }) {
                                 </p>
                             )}
                         </div>
-                        {/* Pakai WalletButton yang sudah ada */}
                         <WalletButton />
                     </div>
                     {account && !isCorrectNetwork && (
@@ -302,7 +290,7 @@ export default function RegisterPage({ registryContract }) {
                     )}
                 </div>
 
-                {/* Role Tabs — hanya aktif di step 1 */}
+                {/* Role Tabs */}
                 <div style={{
                     display: 'flex',
                     border: '1px solid #e2e8f0',
@@ -320,12 +308,10 @@ export default function RegisterPage({ registryContract }) {
                     ))}
                 </div>
 
-                {/* Role Info */}
                 <div style={{
                     background: `${info.color}0d`,
                     border: `1px solid ${info.color}33`,
-                    borderTop: 'none',
-                    borderRadius: '0 0 8px 8px',
+                    borderTop: 'none', borderRadius: '0 0 8px 8px',
                     padding: '12px 16px', marginBottom: 20,
                 }}>
                     <div style={{ fontWeight: 600, color: info.color, marginBottom: 4, fontSize: 14 }}>
@@ -334,41 +320,40 @@ export default function RegisterPage({ registryContract }) {
                     <p style={{ fontSize: 12, color: '#475569', margin: 0 }}>{info.desc}</p>
                 </div>
 
-                {/* Status Banner */}
                 <StatusBanner step={step} status={status} error={error} txHash={txHash} />
 
-                {/* ─── EMAIL SENT: Tunggu verifikasi ─── */}
+                {/* EMAIL SENT: tunggu klik dari email */}
                 {emailSent && (
                     <div style={{ textAlign: 'center', padding: '8px 0 16px' }}>
                         <div style={{ fontSize: 52, marginBottom: 12 }}>✉️</div>
                         <h3 style={{ color: '#1e293b', marginBottom: 8 }}>Cek Email Anda</h3>
-                        <p style={{ color: '#475569', fontSize: 14, marginBottom: 8 }}>
-                            Link verifikasi dikirim ke:
-                        </p>
+                        <p style={{ color: '#475569', fontSize: 14, marginBottom: 8 }}>Link verifikasi dikirim ke:</p>
                         <p style={{ color: '#4f46e5', fontWeight: 700, fontSize: 15, marginBottom: 16 }}>
                             {pendingData?.email || email}
                         </p>
-                        <p style={{ color: '#64748b', fontSize: 13, marginBottom: 24 }}>
-                            Klik link di email untuk melanjutkan pendaftaran.<br />
-                            Link berlaku <strong>15 menit</strong>. Cek folder <em>Spam</em> jika tidak muncul.
+                        <div style={{
+                            display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10,
+                            background: '#f0fdf4', border: '1px solid #bbf7d0',
+                            borderRadius: 8, padding: '12px 16px', marginBottom: 16,
+                        }}>
+                            <span style={{ fontSize: 18 }}>⏳</span>
+                            <span style={{ fontSize: 13, color: '#166534', fontWeight: 500 }}>
+                                Menunggu verifikasi... Halaman akan otomatis lanjut setelah Anda klik link di email.
+                            </span>
+                        </div>
+                        <p style={{ color: '#64748b', fontSize: 12, marginBottom: 24 }}>
+                            Cek folder <em>Spam</em> jika tidak muncul. Link berlaku <strong>15 menit</strong>.
                         </p>
-                        <button onClick={reset} style={secondaryBtn()}>
-                            ← Masukkan email lain
-                        </button>
+                        <button onClick={reset} style={secondaryBtn()}>← Masukkan email lain</button>
                     </div>
                 )}
 
-                {/* ─── STEP 2: Form email (hanya aktif setelah wallet connect) ─── */}
+                {/* STEP 2: Form email */}
                 {!emailSent && !emailStepDone && !isSuccess && (
                     <form onSubmit={handleValidateEmail}>
-                        <fieldset
-                            disabled={!walletConnected || submitting}
-                            style={{ border: 'none', padding: 0, margin: 0 }}
-                        >
+                        <fieldset disabled={!walletConnected || submitting} style={{ border: 'none', padding: 0, margin: 0 }}>
                             <label style={labelStyle}>
-                                {selectedRole === 'School' ? 'Email Institusi' :
-                                 selectedRole === 'HR'     ? 'Email Perusahaan' :
-                                                             'Email Mahasiswa'}
+                                {selectedRole === 'School' ? 'Email Institusi' : 'Email Perusahaan'}
                             </label>
                             <input
                                 type="email"
@@ -376,37 +361,11 @@ export default function RegisterPage({ registryContract }) {
                                 onChange={e => setEmail(e.target.value)}
                                 placeholder={info.emailPlaceholder}
                                 required
-                                style={{
-                                    ...inputStyle,
-                                    opacity: walletConnected ? 1 : 0.5,
-                                    cursor: walletConnected ? 'text' : 'not-allowed',
-                                }}
+                                style={{ ...inputStyle, opacity: walletConnected ? 1 : 0.5 }}
                             />
                             <p style={{ fontSize: 11, color: '#94a3b8', margin: '4px 0 14px' }}>
                                 {info.emailHint}
                             </p>
-
-                            {/* Field tambahan untuk Student: schoolWallet */}
-                            {selectedRole === 'Student' && (
-                                <>
-                                    <label style={labelStyle}>Wallet Address Sekolah Anda</label>
-                                    <input
-                                        type="text"
-                                        value={schoolWallet}
-                                        onChange={e => setSchoolWallet(e.target.value)}
-                                        placeholder="0x... (wallet sekolah yang mendaftarkan email Anda)"
-                                        required
-                                        style={{
-                                            ...inputStyle,
-                                            opacity: walletConnected ? 1 : 0.5,
-                                        }}
-                                    />
-                                    <p style={{ fontSize: 11, color: '#94a3b8', margin: '4px 0 14px' }}>
-                                        Dapatkan alamat ini dari administrator sekolah Anda.
-                                    </p>
-                                </>
-                            )}
-
                             <button
                                 type="submit"
                                 disabled={!walletConnected || !email || submitting}
@@ -420,7 +379,7 @@ export default function RegisterPage({ registryContract }) {
                     </form>
                 )}
 
-                {/* ─── STEP 3: Konfirmasi on-chain via MetaMask ─── */}
+                {/* STEP 3: Konfirmasi on-chain */}
                 {emailStepDone && !isSuccess && (
                     <div>
                         <div style={{
@@ -448,16 +407,6 @@ export default function RegisterPage({ registryContract }) {
                                             </code>
                                         </td>
                                     </tr>
-                                    {selectedRole === 'Student' && pendingData?.schoolWallet && (
-                                        <tr>
-                                            <td style={tdLabel}>Sekolah</td>
-                                            <td>
-                                                <code style={codeStyle}>
-                                                    {pendingData.schoolWallet.slice(0, 10)}...
-                                                </code>
-                                            </td>
-                                        </tr>
-                                    )}
                                 </tbody>
                             </table>
                         </div>
@@ -468,11 +417,7 @@ export default function RegisterPage({ registryContract }) {
                         </p>
 
                         <div style={{ display: 'flex', gap: 10 }}>
-                            <button
-                                onClick={reset}
-                                disabled={isConfirming}
-                                style={secondaryBtn(isConfirming)}
-                            >
+                            <button onClick={reset} disabled={isConfirming} style={secondaryBtn(isConfirming)}>
                                 ← Kembali
                             </button>
                             <button
@@ -482,19 +427,17 @@ export default function RegisterPage({ registryContract }) {
                             >
                                 {isConfirming
                                     ? '⏳ Menunggu konfirmasi MetaMask...'
-                                    : `🦊 Langkah 3 — Daftarkan ke Blockchain`}
+                                    : '🦊 Langkah 3 — Daftarkan ke Blockchain'}
                             </button>
                         </div>
                     </div>
                 )}
 
-                {/* ─── SUCCESS ─── */}
+                {/* SUCCESS */}
                 {isSuccess && (
                     <div style={{ textAlign: 'center', padding: '16px 0' }}>
                         <div style={{ fontSize: 52, marginBottom: 10 }}>{info.icon}</div>
-                        <h3 style={{ color: '#166534', marginBottom: 8 }}>
-                            Selamat datang di TranscriptChain!
-                        </h3>
+                        <h3 style={{ color: '#166534', marginBottom: 8 }}>Selamat datang di TranscriptChain!</h3>
                         <p style={{ color: '#475569', marginBottom: 24, fontSize: 14 }}>
                             Anda kini terdaftar sebagai <strong>{selectedRole}</strong>.
                             Role tersimpan permanen di blockchain.
@@ -509,8 +452,6 @@ export default function RegisterPage({ registryContract }) {
         </div>
     );
 }
-
-// ─── Styles ──────────────────────────────────────────────────
 
 const pageStyle = {
     minHeight: '100vh', display: 'flex', alignItems: 'center',

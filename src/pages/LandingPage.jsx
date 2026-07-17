@@ -39,28 +39,23 @@ function LandingPage() {
                 <div className="container">
                     <div className="section-header">
                         <h2>Bagaimana Cara Kerjanya?</h2>
-                        <p>Proses verifikasi transkrip dalam 4 langkah sederhana</p>
+                        <p>Proses penerbitan dan verifikasi transkrip dalam 3 langkah</p>
                     </div>
                     <div className="steps-grid">
                         <div className="glass-card step-card">
                             <div className="step-number">1</div>
-                            <h3>Upload Transkrip</h3>
-                            <p>Sekolah yang terdaftar mengupload transkrip PDF melalui dashboard yang aman</p>
+                            <h3>Institusi Mendaftar</h3>
+                            <p>Sekolah mendaftar ke whitelist admin dan registrasi wallet on-chain melalui verifikasi email</p>
                         </div>
                         <div className="glass-card step-card">
                             <div className="step-number">2</div>
-                            <h3>Simpan di IPFS</h3>
-                            <p>Dokumen disimpan ke IPFS secara permanen dan mendapat Content ID (CID) unik</p>
+                            <h3>Upload PDF & Mint NFT</h3>
+                            <p>Sekolah upload PDF resmi, sistem hitung SHA-256, simpan ke IPFS, lalu mint NFT ke wallet penerima</p>
                         </div>
                         <div className="glass-card step-card">
                             <div className="step-number">3</div>
-                            <h3>Mint NFT</h3>
-                            <p>Smart contract membuat NFT berisi metadata transkrip dan dikirim ke wallet penerima</p>
-                        </div>
-                        <div className="glass-card step-card">
-                            <div className="step-number">4</div>
-                            <h3>Verifikasi ECDSA</h3>
-                            <p>HR memverifikasi, pemilik menyetujui dengan tanda tangan digital ECDSA</p>
+                            <h3>Verifikasi HR</h3>
+                            <p>HR verifikasi keaslian dokumen: cari by Token ID atau upload PDF untuk perbandingan hash on-chain</p>
                         </div>
                     </div>
                 </div>
@@ -80,9 +75,9 @@ function LandingPage() {
                             <p>NFT dibangun dari scratch tanpa library eksternal, memberikan kontrol penuh atas logika kepemilikan dan transfer dokumen.</p>
                         </div>
                         <div className="glass-card feature-card">
-                            <div className="feature-icon">✍️</div>
-                            <h3>ECDSA dari Rumus</h3>
-                            <p>Implementasi tanda tangan digital menggunakan kurva secp256k1 dari rumus matematika — bukan sekadar memanggil library.</p>
+                            <div className="feature-icon">🔏</div>
+                            <h3>SHA-256 Integrity</h3>
+                            <p>Hash SHA-256 dari PDF tersimpan di blockchain. HR dapat memverifikasi bahwa dokumen tidak diubah sejak diterbitkan.</p>
                         </div>
                         <div className="glass-card feature-card">
                             <div className="feature-icon">🌐</div>
@@ -95,9 +90,9 @@ function LandingPage() {
                             <p>Hanya sekolah yang terdaftar di smart contract yang dapat mengupload transkrip, mencegah akses tidak sah.</p>
                         </div>
                         <div className="glass-card feature-card">
-                            <div className="feature-icon">✅</div>
-                            <h3>Owner Approval</h3>
-                            <p>Pemilik transkrip harus menandatangani persetujuan verifikasi secara aktif menggunakan wallet mereka.</p>
+                            <div className="feature-icon">📄</div>
+                            <h3>PDF Preview On-Chain</h3>
+                            <p>PDF tersimpan di IPFS dan dapat diakses langsung via CID. Token ID NFT menunjuk ke dokumen asli yang tidak dapat diubah.</p>
                         </div>
                         <div className="glass-card feature-card">
                             <div className="feature-icon">🔗</div>

@@ -3,8 +3,6 @@ import Navbar from './components/Navbar'
 import LandingPage from './pages/LandingPage'
 import SchoolDashboard from './pages/SchoolDashboard'
 import VerifyPage from './pages/VerifyPage'
-import OwnerApprovalPage from './pages/OwnerApprovalPage'
-import MinistryDashboard from './pages/MinistryDashboard'
 import AdminDashboard from './pages/AdminDashboard'
 import RegisterPage from './pages/RegisterPage'
 import { AuthProvider } from './context/AuthContext'
@@ -22,8 +20,6 @@ function AppRoutes() {
                     <Route path="/register" element={<RegisterPage registryContract={registryContract} />} />
                     <Route path="/dashboard" element={<SchoolDashboard />} />
                     <Route path="/verify" element={<VerifyPage />} />
-                    <Route path="/owner" element={<OwnerApprovalPage />} />
-                    <Route path="/ministry" element={<MinistryDashboard />} />
                     <Route path="/admin" element={<AdminDashboard />} />
                 </Routes>
             </main>

@@ -1,5 +1,5 @@
 {
-  "address": "0x6843948A9DA1E33f59d4Bc9AC7DD39C5f38031d3",
+  "address": "0x6629084d99faB5A59b8F2d429F0595e0804E5780",
   "abi": [
     {
       "inputs": [],
@@ -54,19 +54,6 @@
         }
       ],
       "name": "ApprovalForAll",
-      "type": "event"
-    },
-    {
-      "anonymous": false,
-      "inputs": [
-        {
-          "indexed": true,
-          "internalType": "address",
-          "name": "ministry",
-          "type": "address"
-        }
-      ],
-      "name": "MinistryAddressUpdated",
       "type": "event"
     },
     {
@@ -131,8 +118,14 @@
         {
           "indexed": false,
           "internalType": "string",
-          "name": "ipfsCID",
+          "name": "pdfCID",
           "type": "string"
+        },
+        {
+          "indexed": false,
+          "internalType": "bytes32",
+          "name": "sha256Hash",
+          "type": "bytes32"
         }
       ],
       "name": "TranscriptMinted",
@@ -164,56 +157,6 @@
       "type": "event"
     },
     {
-      "anonymous": false,
-      "inputs": [
-        {
-          "indexed": true,
-          "internalType": "uint256",
-          "name": "tokenId",
-          "type": "uint256"
-        },
-        {
-          "indexed": true,
-          "internalType": "address",
-          "name": "owner",
-          "type": "address"
-        },
-        {
-          "indexed": true,
-          "internalType": "address",
-          "name": "verifier",
-          "type": "address"
-        }
-      ],
-      "name": "VerificationApproved",
-      "type": "event"
-    },
-    {
-      "anonymous": false,
-      "inputs": [
-        {
-          "indexed": true,
-          "internalType": "uint256",
-          "name": "tokenId",
-          "type": "uint256"
-        },
-        {
-          "indexed": true,
-          "internalType": "address",
-          "name": "requester",
-          "type": "address"
-        },
-        {
-          "indexed": true,
-          "internalType": "address",
-          "name": "owner",
-          "type": "address"
-        }
-      ],
-      "name": "VerificationRequested",
-      "type": "event"
-    },
-    {
       "inputs": [],
       "name": "admin",
       "outputs": [
@@ -240,29 +183,6 @@
         }
       ],
       "name": "approve",
-      "outputs": [],
-      "stateMutability": "nonpayable",
-      "type": "function"
-    },
-    {
-      "inputs": [
-        {
-          "internalType": "uint256",
-          "name": "tokenId",
-          "type": "uint256"
-        },
-        {
-          "internalType": "bytes",
-          "name": "signature",
-          "type": "bytes"
-        },
-        {
-          "internalType": "address",
-          "name": "verifier",
-          "type": "address"
-        }
-      ],
-      "name": "approveVerification",
       "outputs": [],
       "stateMutability": "nonpayable",
       "type": "function"
@@ -308,40 +228,6 @@
     {
       "inputs": [
         {
-          "internalType": "address",
-          "name": "recipient",
-          "type": "address"
-        },
-        {
-          "internalType": "string",
-          "name": "metadataURI",
-          "type": "string"
-        },
-        {
-          "internalType": "string",
-          "name": "studentName",
-          "type": "string"
-        },
-        {
-          "internalType": "string",
-          "name": "ipfsCID",
-          "type": "string"
-        }
-      ],
-      "name": "getMintApprovalHash",
-      "outputs": [
-        {
-          "internalType": "bytes32",
-          "name": "",
-          "type": "bytes32"
-        }
-      ],
-      "stateMutability": "view",
-      "type": "function"
-    },
-    {
-      "inputs": [
-        {
           "internalType": "uint256",
           "name": "tokenId",
           "type": "uint256"
@@ -361,8 +247,13 @@
         },
         {
           "internalType": "string",
-          "name": "ipfsCID_",
+          "name": "pdfCID_",
           "type": "string"
+        },
+        {
+          "internalType": "bytes32",
+          "name": "sha256Hash_",
+          "type": "bytes32"
         },
         {
           "internalType": "address",
@@ -373,25 +264,6 @@
           "internalType": "uint256",
           "name": "issuedAt_",
           "type": "uint256"
-        }
-      ],
-      "stateMutability": "view",
-      "type": "function"
-    },
-    {
-      "inputs": [
-        {
-          "internalType": "uint256",
-          "name": "tokenId",
-          "type": "uint256"
-        }
-      ],
-      "name": "getVerificationMessage",
-      "outputs": [
-        {
-          "internalType": "bytes32",
-          "name": "",
-          "type": "bytes32"
         }
       ],
       "stateMutability": "view",
@@ -443,72 +315,6 @@
     {
       "inputs": [
         {
-          "internalType": "uint256",
-          "name": "tokenId",
-          "type": "uint256"
-        },
-        {
-          "internalType": "address",
-          "name": "verifier",
-          "type": "address"
-        }
-      ],
-      "name": "isVerificationPending",
-      "outputs": [
-        {
-          "internalType": "bool",
-          "name": "",
-          "type": "bool"
-        }
-      ],
-      "stateMutability": "view",
-      "type": "function"
-    },
-    {
-      "inputs": [
-        {
-          "internalType": "uint256",
-          "name": "tokenId",
-          "type": "uint256"
-        },
-        {
-          "internalType": "address",
-          "name": "verifier",
-          "type": "address"
-        }
-      ],
-      "name": "isVerifiedBy",
-      "outputs": [
-        {
-          "internalType": "bool",
-          "name": "verified_",
-          "type": "bool"
-        },
-        {
-          "internalType": "uint256",
-          "name": "verifiedAt_",
-          "type": "uint256"
-        }
-      ],
-      "stateMutability": "view",
-      "type": "function"
-    },
-    {
-      "inputs": [],
-      "name": "ministryAddress",
-      "outputs": [
-        {
-          "internalType": "address",
-          "name": "",
-          "type": "address"
-        }
-      ],
-      "stateMutability": "view",
-      "type": "function"
-    },
-    {
-      "inputs": [
-        {
           "internalType": "address",
           "name": "recipient",
           "type": "address"
@@ -519,13 +325,13 @@
           "type": "string"
         },
         {
-          "internalType": "string",
-          "name": "studentName",
-          "type": "string"
+          "internalType": "bytes32",
+          "name": "sha256Hash",
+          "type": "bytes32"
         },
         {
           "internalType": "string",
-          "name": "ipfsCID",
+          "name": "pdfCID",
           "type": "string"
         }
       ],
@@ -553,22 +359,22 @@
           "type": "string"
         },
         {
+          "internalType": "bytes32",
+          "name": "sha256Hash",
+          "type": "bytes32"
+        },
+        {
+          "internalType": "string",
+          "name": "pdfCID",
+          "type": "string"
+        },
+        {
           "internalType": "string",
           "name": "studentName",
           "type": "string"
-        },
-        {
-          "internalType": "string",
-          "name": "ipfsCID",
-          "type": "string"
-        },
-        {
-          "internalType": "bytes",
-          "name": "schoolSignature",
-          "type": "bytes"
         }
       ],
-      "name": "mintTranscriptWithApproval",
+      "name": "mintTranscriptNamed",
       "outputs": [
         {
           "internalType": "uint256",
@@ -664,32 +470,6 @@
     {
       "inputs": [
         {
-          "internalType": "uint256",
-          "name": "tokenId",
-          "type": "uint256"
-        }
-      ],
-      "name": "requestVerification",
-      "outputs": [],
-      "stateMutability": "nonpayable",
-      "type": "function"
-    },
-    {
-      "inputs": [
-        {
-          "internalType": "uint256",
-          "name": "tokenId",
-          "type": "uint256"
-        }
-      ],
-      "name": "resetVerification",
-      "outputs": [],
-      "stateMutability": "nonpayable",
-      "type": "function"
-    },
-    {
-      "inputs": [
-        {
           "internalType": "address",
           "name": "from",
           "type": "address"
@@ -771,19 +551,6 @@
         }
       ],
       "name": "setApprovalForAll",
-      "outputs": [],
-      "stateMutability": "nonpayable",
-      "type": "function"
-    },
-    {
-      "inputs": [
-        {
-          "internalType": "address",
-          "name": "_ministry",
-          "type": "address"
-        }
-      ],
-      "name": "setMinistryAddress",
       "outputs": [],
       "stateMutability": "nonpayable",
       "type": "function"
@@ -874,8 +641,13 @@
         },
         {
           "internalType": "string",
-          "name": "ipfsCID",
+          "name": "pdfCID",
           "type": "string"
+        },
+        {
+          "internalType": "bytes32",
+          "name": "sha256Hash",
+          "type": "bytes32"
         },
         {
           "internalType": "address",
@@ -913,81 +685,9 @@
       "outputs": [],
       "stateMutability": "nonpayable",
       "type": "function"
-    },
-    {
-      "inputs": [
-        {
-          "internalType": "uint256",
-          "name": "",
-          "type": "uint256"
-        },
-        {
-          "internalType": "address",
-          "name": "",
-          "type": "address"
-        }
-      ],
-      "name": "verificationPending",
-      "outputs": [
-        {
-          "internalType": "bool",
-          "name": "",
-          "type": "bool"
-        }
-      ],
-      "stateMutability": "view",
-      "type": "function"
-    },
-    {
-      "inputs": [
-        {
-          "internalType": "uint256",
-          "name": "",
-          "type": "uint256"
-        },
-        {
-          "internalType": "address",
-          "name": "",
-          "type": "address"
-        }
-      ],
-      "name": "verifiedBy",
-      "outputs": [
-        {
-          "internalType": "bool",
-          "name": "",
-          "type": "bool"
-        }
-      ],
-      "stateMutability": "view",
-      "type": "function"
-    },
-    {
-      "inputs": [
-        {
-          "internalType": "uint256",
-          "name": "",
-          "type": "uint256"
-        },
-        {
-          "internalType": "address",
-          "name": "",
-          "type": "address"
-        }
-      ],
-      "name": "verifiedByAt",
-      "outputs": [
-        {
-          "internalType": "uint256",
-          "name": "",
-          "type": "uint256"
-        }
-      ],
-      "stateMutability": "view",
-      "type": "function"
     }
   ],
   "network": "sepolia",
   "deployer": "0x829b0515aE678D77a1283faca5A8895664C1E998",
-  "deployedAt": "2026-06-10T10:16:19.165Z"
+  "deployedAt": "2026-07-17T06:29:50.154Z"
 }

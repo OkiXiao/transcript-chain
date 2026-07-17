@@ -1,5 +1,5 @@
 {
-  "address": "0x263e45ef0Aa91768505D0AE6cbCfa7C7E0Fa357d",
+  "address": "0xcD7C661a227E8311fEc6d4f87e728dEAb1fE27Cf",
   "abi": [
     {
       "inputs": [
@@ -48,17 +48,6 @@
     {
       "inputs": [],
       "name": "InvalidBackendSignature",
-      "type": "error"
-    },
-    {
-      "inputs": [
-        {
-          "internalType": "address",
-          "name": "schoolWallet",
-          "type": "address"
-        }
-      ],
-      "name": "SchoolNotRegistered",
       "type": "error"
     },
     {
@@ -128,37 +117,6 @@
         {
           "indexed": true,
           "internalType": "address",
-          "name": "wallet",
-          "type": "address"
-        },
-        {
-          "indexed": true,
-          "internalType": "bytes32",
-          "name": "emailHash",
-          "type": "bytes32"
-        },
-        {
-          "indexed": true,
-          "internalType": "address",
-          "name": "verifiedBySchool",
-          "type": "address"
-        },
-        {
-          "indexed": false,
-          "internalType": "uint256",
-          "name": "timestamp",
-          "type": "uint256"
-        }
-      ],
-      "name": "StudentRegistered",
-      "type": "event"
-    },
-    {
-      "anonymous": false,
-      "inputs": [
-        {
-          "indexed": true,
-          "internalType": "address",
           "name": "oldSigner",
           "type": "address"
         },
@@ -189,6 +147,25 @@
         }
       ],
       "name": "UserDeactivated",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": true,
+          "internalType": "address",
+          "name": "wallet",
+          "type": "address"
+        },
+        {
+          "indexed": true,
+          "internalType": "address",
+          "name": "byAdmin",
+          "type": "address"
+        }
+      ],
+      "name": "UserPurged",
       "type": "event"
     },
     {
@@ -329,11 +306,6 @@
               "internalType": "uint256",
               "name": "registeredAt",
               "type": "uint256"
-            },
-            {
-              "internalType": "address",
-              "name": "verifiedBySchool",
-              "type": "address"
             }
           ],
           "internalType": "struct UserRegistry.UserProfile",
@@ -377,35 +349,6 @@
         }
       ],
       "name": "getSchoolRegistrationHash",
-      "outputs": [
-        {
-          "internalType": "bytes32",
-          "name": "",
-          "type": "bytes32"
-        }
-      ],
-      "stateMutability": "view",
-      "type": "function"
-    },
-    {
-      "inputs": [
-        {
-          "internalType": "address",
-          "name": "wallet",
-          "type": "address"
-        },
-        {
-          "internalType": "bytes32",
-          "name": "emailHash",
-          "type": "bytes32"
-        },
-        {
-          "internalType": "address",
-          "name": "schoolWallet",
-          "type": "address"
-        }
-      ],
-      "name": "getStudentRegistrationHash",
       "outputs": [
         {
           "internalType": "bytes32",
@@ -490,25 +433,6 @@
       "inputs": [
         {
           "internalType": "address",
-          "name": "wallet",
-          "type": "address"
-        }
-      ],
-      "name": "isStudent",
-      "outputs": [
-        {
-          "internalType": "bool",
-          "name": "",
-          "type": "bool"
-        }
-      ],
-      "stateMutability": "view",
-      "type": "function"
-    },
-    {
-      "inputs": [
-        {
-          "internalType": "address",
           "name": "",
           "type": "address"
         }
@@ -553,14 +477,22 @@
           "internalType": "uint256",
           "name": "registeredAt",
           "type": "uint256"
-        },
-        {
-          "internalType": "address",
-          "name": "verifiedBySchool",
-          "type": "address"
         }
       ],
       "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "wallet",
+          "type": "address"
+        }
+      ],
+      "name": "purgeUser",
+      "outputs": [],
+      "stateMutability": "nonpayable",
       "type": "function"
     },
     {
@@ -613,44 +545,8 @@
       "type": "function"
     },
     {
-      "inputs": [
-        {
-          "internalType": "bytes32",
-          "name": "emailHash",
-          "type": "bytes32"
-        },
-        {
-          "internalType": "address",
-          "name": "schoolWallet",
-          "type": "address"
-        },
-        {
-          "internalType": "bytes",
-          "name": "backendSig",
-          "type": "bytes"
-        }
-      ],
-      "name": "registerStudent",
-      "outputs": [],
-      "stateMutability": "nonpayable",
-      "type": "function"
-    },
-    {
       "inputs": [],
       "name": "schoolAction",
-      "outputs": [
-        {
-          "internalType": "string",
-          "name": "",
-          "type": "string"
-        }
-      ],
-      "stateMutability": "view",
-      "type": "function"
-    },
-    {
-      "inputs": [],
-      "name": "studentAction",
       "outputs": [
         {
           "internalType": "string",
@@ -688,8 +584,7 @@
       "type": "function"
     }
   ],
-  "trustedSigner": "0xFF7D175e3f0F5C9b9620FA12d1BCfeb3061FE53c",
   "network": "sepolia",
   "deployer": "0x829b0515aE678D77a1283faca5A8895664C1E998",
-  "deployedAt": "2026-06-10T17:13:43.025Z"
+  "deployedAt": "2026-07-17T06:46:54.248Z"
 }

@@ -33,3 +33,5 @@ uploads/
 
 # Scripts setup (berisi logic deploy, tidak perlu di-share)
 scripts/setup-new-contract.js
+
+.env*.local

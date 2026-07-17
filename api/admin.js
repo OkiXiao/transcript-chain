@@ -1,5 +1,5 @@
 import { ethers } from 'ethers';
-import { getAllowedSchools, getAllowedHR, addToWhitelist, removeFromWhitelist, getConfig, setConfig } from './_lib/firebaseAdmin.js';
+import { getAllowedSchools, getAllowedHR, addToWhitelist, removeFromWhitelist, getAllRegisteredEmails, removeRegisteredEmail } from './_lib/firebaseAdmin.js';
 
 const ADMIN_WALLET = process.env.ADMIN_WALLET?.toLowerCase() || '';
 
@@ -35,29 +35,90 @@ export default async function handler(req, res) {
                 const hr = await getAllowedHR();
                 return res.json({ success: true, hr });
             }
-            if (type === 'config') {
-                const ministryWallet = await getConfig('ministryWallet') || process.env.MINISTRY_WALLET || '';
-                return res.json({ success: true, ministryWallet });
-            }
-            // Return both
             const [schools, hr] = await Promise.all([getAllowedSchools(), getAllowedHR()]);
             return res.json({ success: true, schools, hr });
         }
 
-        // ─── POST: add to whitelist ──────────────────────────────
+        // ─── POST ────────────────────────────────────────────────
         if (req.method === 'POST') {
             const { adminWallet, action, email, schoolName, companyName } = req.body;
             if (!validateAdmin(adminWallet, res)) return;
 
-            if (action === 'set_ministry') {
-                const { ministryWallet: mw } = req.body;
-                if (!mw || !ethers.isAddress(mw)) {
-                    return res.status(400).json({ success: false, error: 'Alamat wallet Kementerian tidak valid.' });
+            // ── reset_wallets: deactivate all except admin ──
+            if (action === 'reset_wallets') {
+                const KEEP = new Set([
+                    (process.env.ADMIN_WALLET || '').toLowerCase(),
+                ].filter(Boolean));
+
+                const RPC      = process.env.SEPOLIA_RPC_URL || process.env.RPC_URL;
+                const REG_ADDR = process.env.USER_REGISTRY_ADDRESS;
+                const PRIV_KEY = process.env.DEPLOYER_PRIVATE_KEY;
+                if (!RPC || !REG_ADDR || !PRIV_KEY) {
+                    return res.status(500).json({ success: false, error: 'Missing RPC/registry/deployer env vars.' });
                 }
-                await setConfig('ministryWallet', mw.toLowerCase());
-                return res.json({ success: true, message: `Wallet Kementerian berhasil diset ke ${mw}.` });
+
+                const REGISTRY_ABI = [
+                    'function isRegistered(address) view returns (bool)',
+                    'function deactivateUser(address wallet)',
+                ];
+                const provider = new ethers.JsonRpcProvider(RPC);
+                const deployer = new ethers.Wallet(PRIV_KEY, provider);
+                const registry = new ethers.Contract(REG_ADDR, REGISTRY_ABI, deployer);
+
+                const allEmails = await getAllRegisteredEmails();
+                const entries   = Object.entries(allEmails).map(([key, data]) => ({
+                    key, email: data.email, wallet: (data.walletAddress || '').toLowerCase(), role: data.role,
+                })).filter(e => e.wallet && !KEEP.has(e.wallet));
+
+                const feeData = await provider.getFeeData();
+                const baseFee = feeData.lastBaseFeePerGas || ethers.parseUnits('2', 'gwei');
+                const gasOpts = {
+                    maxFeePerGas:         baseFee + ethers.parseUnits('4', 'gwei'),
+                    maxPriorityFeePerGas: ethers.parseUnits('2', 'gwei'),
+                    gasLimit:             80_000n,
+                    chainId:              11155111n,
+                };
+                let nonce = await provider.getTransactionCount(deployer.address, 'latest');
+
+                const deactivated = [], skipped = [], errors = [];
+
+                for (const entry of entries) {
+                    try {
+                        const onChain = await registry.isRegistered(entry.wallet);
+                        if (onChain) {
+                            const signed = await deployer.signTransaction({
+                                to: REG_ADDR,
+                                data: registry.interface.encodeFunctionData('deactivateUser', [entry.wallet]),
+                                nonce, ...gasOpts,
+                            });
+                            const txBody = JSON.stringify({ jsonrpc: '2.0', id: 1, method: 'eth_sendRawTransaction', params: [signed] });
+                            const resp   = await Promise.race([
+                                fetch(RPC, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: txBody }).then(r => r.json()),
+                                new Promise((_, rej) => setTimeout(() => rej(new Error('timeout')), 8000)),
+                            ]).catch(() => ({}));
+                            nonce++;
+                            await removeRegisteredEmail(entry.key);
+                            deactivated.push({ wallet: entry.wallet, email: entry.email, role: entry.role, txHash: resp.result || null });
+                        } else {
+                            await removeRegisteredEmail(entry.key);
+                            skipped.push({ wallet: entry.wallet, email: entry.email, reason: 'not on-chain' });
+                        }
+                    } catch (err) {
+                        errors.push({ wallet: entry.wallet, email: entry.email, error: err.message });
+                    }
+                }
+
+                return res.json({
+                    success: true,
+                    kept: [...KEEP],
+                    deactivated,
+                    skipped,
+                    errors,
+                    summary: `${deactivated.length} dinonaktifkan, ${skipped.length} hanya Firebase, ${errors.length} error`,
+                });
             }
 
+            // ── whitelist actions (require email) ──
             if (!email || !email.includes('@')) {
                 return res.status(400).json({ success: false, error: 'Email tidak valid.' });
             }
