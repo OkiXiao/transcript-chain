@@ -2,6 +2,7 @@ import { useState, useRef, useEffect, useCallback } from 'react';
 import { useWeb3 } from '../context/Web3Context';
 import { useAuth, ROLE } from '../context/AuthContext';
 import { ethers } from 'ethers';
+import contractInfo from '../contracts/TranscriptNFT.json.js';
 import * as pdfjsLib from 'pdfjs-dist';
 pdfjsLib.GlobalWorkerOptions.workerSrc = new URL('pdfjs-dist/build/pdf.worker.min.mjs', import.meta.url).href;
 
@@ -68,37 +69,57 @@ function PdfPreview({ file }) {
 }
 
 // ── History table ─────────────────────────────────────────────────────────────
-function MintHistory({ contract, account }) {
-    const [history, setHistory] = useState([]);
+const CACHE_KEY = (account) => `mintHistory_${account?.toLowerCase()}`;
+const RPC_URLS = [
+    'https://ethereum-sepolia-rpc.publicnode.com',
+    'https://rpc2.sepolia.org',
+    'https://sepolia.gateway.tenderly.co',
+];
+
+function MintHistory({ account }) {
+    const cacheKey = CACHE_KEY(account);
+    const cached = (() => { try { return JSON.parse(localStorage.getItem(cacheKey) || '[]'); } catch { return []; } })();
+    const [history, setHistory] = useState(cached);
     const [loading, setLoading] = useState(false);
+    const [fetchError, setFetchError] = useState('');
 
     const load = useCallback(async () => {
-        if (!contract || !account) return;
+        if (!account) return;
         setLoading(true);
-        try {
-            const filter = contract.filters.TranscriptMinted(null, account);
-            const provider = contract.runner?.provider || contract.provider;
-            const currentBlock = await provider.getBlockNumber();
-            const fromBlock = Math.max(0, currentBlock - 9000);
-            const events = await contract.queryFilter(filter, fromBlock, 'latest');
-            setHistory(events.reverse().map(e => ({
-                tokenId:     e.args[0]?.toString(),
-                recipient:   e.args[2],
-                studentName: e.args[3],
-                pdfCID:      e.args[4],
-                sha256Hash:  e.args[5],
-                txHash:      e.transactionHash,
-            })));
-        } catch (err) {
-            console.error('[MintHistory]', err);
-        } finally {
-            setLoading(false);
+        setFetchError('');
+        let lastErr = null;
+        for (const rpcUrl of RPC_URLS) {
+            try {
+                const rpcProvider = new ethers.JsonRpcProvider(rpcUrl);
+                const readContract = new ethers.Contract(contractInfo.address, contractInfo.abi, rpcProvider);
+                const filter = readContract.filters.TranscriptMinted(null, account);
+                const currentBlock = await rpcProvider.getBlockNumber();
+                const fromBlock = Math.max(0, currentBlock - 9000);
+                const events = await readContract.queryFilter(filter, fromBlock, 'latest');
+                const rows = events.reverse().map(e => ({
+                    tokenId:     e.args[0]?.toString(),
+                    recipient:   e.args[2],
+                    studentName: e.args[3],
+                    pdfCID:      e.args[4],
+                    sha256Hash:  e.args[5],
+                    txHash:      e.transactionHash,
+                }));
+                setHistory(rows);
+                try { localStorage.setItem(cacheKey, JSON.stringify(rows)); } catch {}
+                setLoading(false);
+                return;
+            } catch (err) {
+                lastErr = err;
+            }
         }
-    }, [contract, account]);
+        console.error('[MintHistory]', lastErr);
+        setFetchError('Gagal memuat riwayat dari blockchain. Menampilkan cache terakhir.');
+        setLoading(false);
+    }, [account, cacheKey]);
 
     useEffect(() => { load(); }, [load]);
 
-    if (loading) return (
+    if (loading && !history.length) return (
         <div style={{ textAlign: 'center', padding: 32 }}>
             <span className="spinner" style={{ width: 28, height: 28 }}></span>
         </div>
@@ -106,6 +127,7 @@ function MintHistory({ contract, account }) {
 
     if (!history.length) return (
         <div style={{ textAlign: 'center', padding: 40, color: 'var(--text-muted)' }}>
+            {fetchError && <p style={{ color: '#f87171', fontSize: 13, marginBottom: 12 }}>⚠️ {fetchError}</p>}
             <p style={{ fontSize: '2.5rem', marginBottom: 8 }}>📄</p>
             <p>Belum ada transkrip yang di-mint dari wallet ini.</p>
             <button className="btn btn-secondary" style={{ marginTop: 12, fontSize: 13 }} onClick={load}>
@@ -116,8 +138,13 @@ function MintHistory({ contract, account }) {
 
     return (
         <div>
+            {fetchError && (
+                <div style={{ marginBottom: 10, fontSize: 13, color: '#f87171' }}>⚠️ {fetchError}</div>
+            )}
             <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 12 }}>
-                <button className="btn btn-secondary" style={{ fontSize: 13 }} onClick={load}>↻ Refresh</button>
+                <button className="btn btn-secondary" style={{ fontSize: 13 }} onClick={load} disabled={loading}>
+                    {loading ? <span className="spinner" style={{ width: 12, height: 12 }}></span> : '↻ Refresh'}
+                </button>
             </div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
                 {history.map((item, i) => (
@@ -494,7 +521,7 @@ export default function SchoolDashboard() {
             {activeTab === 'history' && (
                 <div className="glass-card-static">
                     <h3 style={{ fontSize: 'var(--font-md)', marginBottom: 'var(--space-lg)' }}>Riwayat Transkrip yang Di-Mint</h3>
-                    <MintHistory contract={contract} account={account} />
+                    <MintHistory account={account} />
                 </div>
             )}
         </div>
